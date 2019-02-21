@@ -61,7 +61,7 @@ class DDPG(object):
 
     def sample_trajectory(self):
         s = env.reset()
-        path = {}
+        path = []
         for j in range(MAX_EP_STEPS):
 
             a = ddpg._sample_action(s, var)
