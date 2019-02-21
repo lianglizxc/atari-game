@@ -25,8 +25,8 @@ class DDPG(object):
 
 
         self.memory_size = MEMORY_CAPACITY
-        self.memory = np.zeros((self.memory_size, s_dim * 2 + a_dim + 2), dtype=np.float32)
         self.pointer = 0
+        self.memory = np.zeros((self.memory_size, s_dim * 2 + a_dim + 2), dtype=np.float32)
         self.a_replace_counter, self.c_replace_counter = 0, 0
 
         self.lr_a, self.lr_q, self.gamma, self.tau = lr_a, lr_q,gamma, tau
@@ -59,7 +59,10 @@ class DDPG(object):
         self.sess = tf.Session()
         self.sess.run(tf.global_variables_initializer())
 
-    def sample_action(self, s, var):
+    def sample_trajectory(self):
+        pass
+
+    def _sample_action(self, s, var):
         a = self.sess.run(self.a, feed_dict={self.s: s[None, :]})[0]
         a = np.clip(np.random.normal(a, var), -2, 2)
         return a
