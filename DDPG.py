@@ -60,7 +60,13 @@ class DDPG(object):
         self.sess.run(tf.global_variables_initializer())
 
     def sample_trajectory(self):
-        pass
+        s = env.reset()
+        path = {}
+        for j in range(MAX_EP_STEPS):
+
+            a = ddpg._sample_action(s, var)
+            s_, r, done, info = env.step(a)
+            s = s_
 
     def _sample_action(self, s, var):
         a = self.sess.run(self.a, feed_dict={self.s: s[None, :]})[0]
