@@ -65,6 +65,7 @@ class DDPG(object):
         self.sess = tf.Session()
         self.sess.run(tf.global_variables_initializer())
 
+
     def sample_action(self, s):
         a = self.sess.run(self.a, feed_dict={self.s: s[None, :]})[0]
         a = np.clip(np.random.normal(a, self.var), -2, 2)
