@@ -17,11 +17,6 @@ import matplotlib.pyplot as plt
 import time
 
 start = time.clock()
-MAX_EPISODES = 500
-MAX_EP_STEPS = 200
-
-RENDER = False
-ENV_NAME = 'Pendulum-v0'
 
 class DDPG(object):
 
@@ -68,7 +63,7 @@ class DDPG(object):
 
     def sample_action(self, s):
         a = self.sess.run(self.a, feed_dict={self.s: s[None, :]})[0]
-        a = np.clip(np.random.normal(a, self.var), -2, 2)
+        a = np.clip(np.random.normal(a, self.var), -self.a_bound[0], self.a_bound[0])
         return a
 
 
@@ -134,53 +129,60 @@ class DDPG(object):
 
 ###############################  training  ####################################
 
-env = gym.make(ENV_NAME)
-env = env.unwrapped
-env.seed(1)
+if __name__ == '__main__':
+    MAX_EPISODES = 500
+    MAX_EP_STEPS = 200
 
-s_dim = env.observation_space.shape[0]
-a_dim = env.action_space.shape[0]
-a_bound = env.action_space.high
+    RENDER = False
+    ENV_NAME = 'Pendulum-v0'
 
-ddpg = DDPG(a_dim, s_dim, a_bound)
+    env = gym.make(ENV_NAME)
+    env = env.unwrapped
+    env.seed(1)
 
-episode_reward = []
-for i in range(MAX_EPISODES):
-    s = env.reset()
-    ep_reward = 0
-    if ddpg.var >= 0.1:
-        ddpg.var *= .985  # decay the action randomness
+    s_dim = env.observation_space.shape[0]
+    a_dim = env.action_space.shape[0]
+    a_bound = env.action_space.high
 
-    for j in range(MAX_EP_STEPS):
-        if RENDER:
-            env.render()
+    ddpg = DDPG(a_dim, s_dim, a_bound)
 
-        # Add exploration noise
-        a = ddpg.sample_action(s)  # add randomness to action selection for exploration
-        s_, r, done, info = env.step(a)
+    episode_reward = []
+    for i in range(MAX_EPISODES):
+        s = env.reset()
+        ep_reward = 0
+        if ddpg.var >= 0.1:
+            ddpg.var *= .985  # decay the action randomness
 
-        ddpg.store_transition(s, a, r, s_, done)
+        for j in range(MAX_EP_STEPS):
+            if RENDER:
+                env.render()
 
-        if ddpg.pointer > ddpg.memory_size:
-            ddpg.learn()
+            # Add exploration noise
+            a = ddpg.sample_action(s)  # add randomness to action selection for exploration
+            s_, r, done, info = env.step(a)
 
-        s = s_
-        ep_reward += r
-        if done: break
+            ddpg.store_transition(s, a, r, s_, done)
 
-    episode_reward.append(ep_reward)
-    print('Episode:', i, ' Reward: %i' % int(ep_reward), 'Explore: %.2f' % ddpg.var, )
-    if ep_reward > 10:
-        RENDER = True
+            if ddpg.pointer > ddpg.memory_size:
+                ddpg.learn()
 
-end = time.clock()
-print('Running time: %s Seconds' % (end - start))
+            s = s_
+            ep_reward += r
+            if done: break
 
-sns.set(style="darkgrid")
-plt.figure(1)
-plt.plot(episode_reward, label='DDPG')
-plt.xlabel('Episode')
-plt.ylabel('Reward')
-plt.legend(loc='best')
+        episode_reward.append(ep_reward)
+        print('Episode:', i, ' Reward: %i' % int(ep_reward), 'Explore: %.2f' % ddpg.var, )
+        if ep_reward > 10:
+            RENDER = True
 
-plt.show()
+    end = time.clock()
+    print('Running time: %s Seconds' % (end - start))
+
+    sns.set(style="darkgrid")
+    plt.figure(1)
+    plt.plot(episode_reward, label='DDPG')
+    plt.xlabel('Episode')
+    plt.ylabel('Reward')
+    plt.legend(loc='best')
+
+    plt.show()
