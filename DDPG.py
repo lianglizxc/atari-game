@@ -63,7 +63,7 @@ class DDPG(object):
 
     def sample_action(self, s):
         a = self.sess.run(self.a, feed_dict={self.s: s[None, :]})[0]
-        a = np.clip(np.random.normal(a, self.var), -self.a_bound[0], self.a_bound[0])
+        # a = np.clip(np.random.normal(a, self.var), -self.a_bound[0], self.a_bound[0])
         return a
 
 
@@ -114,8 +114,8 @@ class DDPG(object):
             return self.a_bound * a
 
     def _critic_net(self, s, a, trainable):
-        hidden_units = [40, 20]
-        activation = [tf.nn.relu, tf.nn.relu]
+        hidden_units = [40, 20, 10]
+        activation = [tf.nn.relu, tf.nn.relu, tf.nn.relu]
         layer = tf.concat([s, a], axis=1)
         with tf.variable_scope('critic'):
             init_w = tf.random_normal_initializer(0., 0.1)
@@ -127,38 +127,35 @@ class DDPG(object):
                                 kernel_initializer=init_w, bias_initializer=init_b, trainable=trainable)
             return q
 
-###############################  training  ####################################
 
 if __name__ == '__main__':
     MAX_EPISODES = 500
     MAX_EP_STEPS = 200
 
     RENDER = False
-    ENV_NAME = 'Pendulum-v0'
+    ENV_NAME = 'Boxing-ram-v0'
 
     env = gym.make(ENV_NAME)
     env = env.unwrapped
     env.seed(1)
 
     s_dim = env.observation_space.shape[0]
-    a_dim = env.action_space.shape[0]
-    a_bound = env.action_space.high
-
-    ddpg = DDPG(a_dim, s_dim, a_bound)
+    a_dim = env.action_space.n
+    ddpg = DDPG(a_dim, s_dim)
 
     episode_reward = []
     for i in range(MAX_EPISODES):
         s = env.reset()
         ep_reward = 0
-        if ddpg.var >= 0.1:
-            ddpg.var *= .985  # decay the action randomness
+
+        ddpg.var *= .99  # decay the action randomness
 
         for j in range(MAX_EP_STEPS):
             if RENDER:
                 env.render()
 
             # Add exploration noise
-            a = ddpg.sample_action(s)  # add randomness to action selection for exploration
+            a = ddpg.sample_action(s)
             s_, r, done, info = env.step(a)
 
             ddpg.store_transition(s, a, r, s_, done)
